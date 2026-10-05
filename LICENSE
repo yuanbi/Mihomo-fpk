@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 luoxi
+Copyright (c) 2026 yuanbi
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,15 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+--------------------------------------------------------------------------------
+
+本仓库在 app/ 目录下同时分发若干第三方组件，其版权与许可归各自上游项目所有，
+不适用上述 MIT 条款：
+
+  - app/bin/mihomo              MetaCubeX/mihomo            MIT
+  - app/dashboard/**            MetaCubeX/metacubexd        MIT
+  - app/geo/GeoIP.dat           MetaCubeX/meta-rules-dat    GPL-3.0
+  - app/geo/GeoSite.dat         MetaCubeX/meta-rules-dat    GPL-3.0
+
+详见 README.md 的「第三方组件与来源标注」一节。
