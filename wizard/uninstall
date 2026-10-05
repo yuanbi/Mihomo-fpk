@@ -1,0 +1,23 @@
+[
+    {
+        "stepTitle": "卸载确认",
+        "items": [
+            {
+                "type": "radio",
+                "field": "wizard_data_action",
+                "label": "应用数据",
+                "initValue": "keep",
+                "options": [
+                    {
+                        "label": "保留配置与数据",
+                        "value": "keep"
+                    },
+                    {
+                        "label": "全部删除（订阅、配置、日志）",
+                        "value": "delete"
+                    }
+                ]
+            }
+        ]
+    }
+]

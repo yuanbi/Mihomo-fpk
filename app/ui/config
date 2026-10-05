@@ -1,0 +1,31 @@
+{
+    ".url": {
+        "Mihomo-fpk.Console": {
+            "title": "Mihomo 代理",
+            "icon": "images/icon_{0}.png",
+            "type": "iframe",
+            "protocol": "http",
+            "port": "",
+            "url": "/cgi/ThirdParty/Mihomo-fpk/index.cgi/",
+            "allUsers": false
+        },
+        "Mihomo-fpk.Dashboard": {
+            "title": "Clash 面板",
+            "icon": "images/icon_{0}.png",
+            "type": "iframe",
+            "protocol": "http",
+            "port": "",
+            "url": "/cgi/ThirdParty/Mihomo-fpk/index.cgi/dashboard/",
+            "allUsers": false
+        },
+        "Mihomo-fpk.Direct": {
+            "title": "Mihomo 代理（直达端口）",
+            "icon": "images/icon_{0}.png",
+            "type": "iframe",
+            "protocol": "http",
+            "port": "9788",
+            "url": "/",
+            "allUsers": false
+        }
+    }
+}

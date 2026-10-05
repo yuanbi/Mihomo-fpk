@@ -1,0 +1,9 @@
+#!/bin/bash
+# 应用设置（wizard/config）变更前：先停掉服务，避免配置读写竞争。
+# 真正的生效动作放在 config_callback 里。
+
+CMD_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+bash "${CMD_DIR}/main" stop >/dev/null 2>&1
+
+exit 0

@@ -1,0 +1,15 @@
+#!/bin/bash
+# 卸载后：根据用户选择决定是否删除应用数据。
+
+PKG_VAR="${TRIM_PKGVAR:-/tmp/mihomo-fpk/var}"
+PKG_ETC="${TRIM_PKGETC:-/tmp/mihomo-fpk/etc}"
+
+if [ "${wizard_data_action:-}" = "delete" ]; then
+    echo "正在删除 Mihomo 代理的运行数据与配置 ..."
+    rm -rf "${PKG_VAR:?}"
+    rm -rf "${PKG_ETC:?}"
+else
+    echo "已保留 Mihomo 代理的配置与运行数据，便于下次安装时继续使用。"
+fi
+
+exit 0

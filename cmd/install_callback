@@ -1,0 +1,58 @@
+#!/bin/bash
+# 安装后回调：准备目录、赋予可执行权限、保存安装向导收集到的初始配置。
+
+APP_DEST="${TRIM_APPDEST:-$(cd "$(dirname "$0")/.." && pwd)}"
+PKG_VAR="${TRIM_PKGVAR:-/tmp/mihomo-fpk/var}"
+PKG_ETC="${TRIM_PKGETC:-/tmp/mihomo-fpk/etc}"
+TEMP_LOG="${TRIM_TEMP_LOGFILE:-/dev/null}"
+
+BIN_DIR="${APP_DEST}/bin"
+
+mkdir -p "${PKG_VAR}" "${PKG_ETC}" "${PKG_VAR}/logs" "${PKG_VAR}/mihomo/providers" "${PKG_ETC}/subs" 2>/dev/null
+
+# 确保内核与面板可执行
+for f in "${BIN_DIR}/mihomo" "${BIN_DIR}/mihomo-panel"; do
+    if [ -f "${f}" ]; then
+        chmod 0755 "${f}" 2>/dev/null
+    else
+        echo "安装包缺少运行文件：${f}" >"${TEMP_LOG}"
+        exit 1
+    fi
+done
+
+# CGI 同源代理脚本：飞牛网关要求入口文件名必须是 index.cgi。
+# fnpack 打包会把权限归一成 0666，必须补执行位，
+# 否则飞牛的同源网关无法执行它，桌面窗口会是一片空白。
+if [ -f "${APP_DEST}/ui/index.cgi" ]; then
+    chmod 0755 "${APP_DEST}/ui/index.cgi" 2>/dev/null
+fi
+
+# 复制内置 GeoIP / GeoSite 数据库到运行目录
+if [ -d "${APP_DEST}/geo" ]; then
+    mkdir -p "${PKG_VAR}/mihomo"
+    for g in GeoIP.dat GeoSite.dat; do
+        if [ -f "${APP_DEST}/geo/${g}" ]; then
+            cp -f "${APP_DEST}/geo/${g}" "${PKG_VAR}/mihomo/${g}" 2>/dev/null
+        fi
+    done
+fi
+
+# 保存安装向导的初始配置，供面板首次启动时导入。
+# 订阅来源有两种：订阅链接（sub_url）或 NAS 上的订阅文件（sub_path），
+# 由向导里的 sub_source 单选决定用哪一个。
+INSTALL_ENV="${PKG_ETC}/install.env"
+{
+    printf 'SUB_SOURCE="%s"\n' "${sub_source:-url}"
+    printf 'SUB_URL="%s"\n' "${sub_url:-}"
+    printf 'SUB_PATH="%s"\n' "${sub_path:-}"
+    printf 'SUB_MODE="%s"\n' "${sub_mode:-nodes}"
+    printf 'MIXED_PORT="%s"\n' "${mixed_port:-7890}"
+} >"${INSTALL_ENV}"
+chmod 0600 "${INSTALL_ENV}" 2>/dev/null
+
+# 选了「订阅文件」但在安装阶段就发现路径不对时，给出可读提示（不阻断安装）。
+if [ "${sub_source:-}" = "file" ] && [ -n "${sub_path:-}" ] && [ ! -f "${sub_path}" ]; then
+    echo "已安装，但订阅文件 ${sub_path} 当前不存在或不可读；可在应用面板中重新指定。" >"${TEMP_LOG}"
+fi
+
+exit 0

@@ -1,0 +1,16 @@
+#!/bin/bash
+# 安装前检查：确认系统架构。
+
+TEMP_LOG="${TRIM_TEMP_LOGFILE:-/dev/null}"
+
+ARCH="$(uname -m 2>/dev/null)"
+case "${ARCH}" in
+x86_64 | amd64)
+    ;;
+*)
+    echo "当前设备架构为 ${ARCH}，本安装包仅支持 x86_64 设备。" >"${TEMP_LOG}"
+    exit 1
+    ;;
+esac
+
+exit 0

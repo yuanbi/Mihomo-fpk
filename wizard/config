@@ -1,0 +1,96 @@
+[
+    {
+        "stepTitle": "订阅来源",
+        "items": [
+            {
+                "type": "radio",
+                "field": "sub_source",
+                "label": "订阅来源",
+                "initValue": "keep",
+                "options": [
+                    {
+                        "label": "不修改（保持面板里的设置）",
+                        "value": "keep"
+                    },
+                    {
+                        "label": "订阅链接（https:// 开头）",
+                        "value": "url"
+                    },
+                    {
+                        "label": "NAS 上的订阅文件（填绝对路径）",
+                        "value": "file"
+                    }
+                ]
+            },
+            {
+                "type": "text",
+                "field": "sub_url",
+                "label": "订阅链接",
+                "initValue": "",
+                "rules": [
+                    {
+                        "pattern": "^$|^https?://.+$",
+                        "message": "请填写以 http:// 或 https:// 开头的订阅地址"
+                    }
+                ]
+            },
+            {
+                "type": "text",
+                "field": "sub_path",
+                "label": "订阅文件路径（选择「订阅文件」时填写）",
+                "initValue": "",
+                "rules": []
+            },
+            {
+                "type": "radio",
+                "field": "sub_mode",
+                "label": "订阅使用方式",
+                "initValue": "keep",
+                "options": [
+                    {
+                        "label": "保持现状",
+                        "value": "keep"
+                    },
+                    {
+                        "label": "内置规则",
+                        "value": "nodes"
+                    },
+                    {
+                        "label": "使用订阅自带规则",
+                        "value": "full"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "stepTitle": "服务设置",
+        "items": [
+            {
+                "type": "text",
+                "field": "mixed_port",
+                "label": "混合代理端口（留空则保持当前值）",
+                "initValue": "",
+                "rules": [
+                    {
+                        "pattern": "^$|^[0-9]{2,5}$",
+                        "message": "端口必须是 2-5 位数字，或留空"
+                    }
+                ]
+            },
+            {
+                "type": "tips",
+                "helpText": "这里只用于首次安装后补充或更换订阅。TUN、DNS、规则等更细的选项请打开「Mihomo 代理」应用面板，在「设置」标签页里调整。保存后应用会自动重启以生效。"
+            }
+        ]
+    },
+    {
+        "stepTitle": "订阅文件怎么填",
+        "items": [
+            {
+                "type": "tips",
+                "helpText": "若选择「NAS 上的订阅文件」：先在飞牛「文件管理」里把订阅文件（.yaml 或 base64 文本，扩展名不限）放到任意目录，右键该文件 → 详细信息 → 复制原始路径，再把形如 /vol1/1000/docker/sub.yaml 的路径粘贴回上一页。也可以直接在应用面板的「设置 → 订阅来源」里上传文件。"
+            }
+        ]
+    }
+]

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mihomo 代理 · 登录</title>
+    <link rel="icon" href="favicon.svg" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body class="login-page">
+    <form class="login-card" id="loginForm">
+        <div class="logo">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+                <defs>
+                    <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#6366f1" />
+                        <stop offset="100%" stop-color="#0ea5e9" />
+                    </linearGradient>
+                </defs>
+                <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#lg)" />
+                <path d="M12 33V19l8 8 8-8v14" stroke="#fff" stroke-width="3.4" stroke-linecap="round"
+                    stroke-linejoin="round" fill="none" />
+                <circle cx="34" cy="33" r="3.4" fill="#fff" />
+            </svg>
+        </div>
+        <h1>Mihomo 代理</h1>
+        <p>请输入控制台访问密码</p>
+        <input id="password" type="password" placeholder="访问密码" autocomplete="current-password" autofocus />
+        <button class="btn btn-primary" type="submit">进入控制台</button>
+        <p class="hint" id="loginMsg"></p>
+    </form>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function (ev) {
+            ev.preventDefault();
+            var msg = document.getElementById('loginMsg');
+            msg.textContent = '';
+            fetch('api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: document.getElementById('password').value })
+            }).then(function (r) { return r.json().catch(function () { return {}; }); })
+                .then(function (d) {
+                    if (d && d.ok) {
+                        location.href = './';
+                    } else {
+                        msg.textContent = (d && d.error) || '登录失败';
+                    }
+                })
+                .catch(function () { msg.textContent = '无法连接服务'; });
+        });
+    </script>
+</body>
+
+</html>

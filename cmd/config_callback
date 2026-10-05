@@ -1,0 +1,35 @@
+#!/bin/bash
+# 应用设置（wizard/config）变更后：把向导值落盘，然后重启服务让面板读取并生效。
+#
+# 面板启动时会消费 etc/config.env 并删除它，所以这个文件即使这次没被读走，
+# 下次启动也会补上——反复保存设置是幂等的。
+
+PKG_ETC="${TRIM_PKGETC:-/tmp/mihomo-fpk/etc}"
+CMD_DIR="$(cd "$(dirname "$0")" && pwd)"
+CONFIG_ENV="${PKG_ETC}/config.env"
+
+mkdir -p "${PKG_ETC}" 2>/dev/null
+
+# 去掉换行与双引号，保证一行一个键值对，避免把 env 文件写坏。
+clean() {
+    printf '%s' "${1:-}" | tr -d '\r\n"'
+}
+
+{
+    printf 'SUB_SOURCE="%s"\n' "$(clean "${sub_source:-keep}")"
+    printf 'SUB_URL="%s"\n' "$(clean "${sub_url:-}")"
+    printf 'SUB_PATH="%s"\n' "$(clean "${sub_path:-}")"
+    printf 'SUB_MODE="%s"\n' "$(clean "${sub_mode:-keep}")"
+    printf 'MIXED_PORT="%s"\n' "$(clean "${mixed_port:-}")"
+} >"${CONFIG_ENV}"
+chmod 0600 "${CONFIG_ENV}" 2>/dev/null
+
+# 选了「订阅文件」但路径不可读时，提前提示（不阻断保存）。
+if [ "${sub_source:-}" = "file" ] && [ -n "${sub_path:-}" ] && [ ! -f "${sub_path}" ]; then
+    echo "设置已保存，但订阅文件 ${sub_path} 当前不存在或不可读，可在应用面板中重新指定。" >"${TRIM_TEMP_LOGFILE:-/dev/null}"
+fi
+
+# 重启服务：面板只在启动时读取 config.env。
+bash "${CMD_DIR}/main" start >/dev/null 2>&1
+
+exit 0

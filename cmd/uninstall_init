@@ -1,0 +1,31 @@
+#!/bin/bash
+# 卸载前：停止服务并清理进程。
+
+APP_DEST="${TRIM_APPDEST:-$(cd "$(dirname "$0")/.." && pwd)}"
+PKG_VAR="${TRIM_PKGVAR:-/tmp/mihomo-fpk/var}"
+
+PID_FILE="${PKG_VAR}/panel.pid"
+KERNEL_PID_FILE="${PKG_VAR}/mihomo.pid"
+
+stop_by_pidfile() {
+    local file="$1"
+    [ -f "${file}" ] || return 0
+    local pid
+    pid=$(head -n 1 "${file}" | tr -d '[:space:]')
+    if [ -n "${pid}" ] && kill -0 "${pid}" 2>/dev/null; then
+        kill -TERM "${pid}" 2>/dev/null
+        local n=0
+        while kill -0 "${pid}" 2>/dev/null && [ "${n}" -lt 20 ]; do
+            sleep 0.5
+            n=$((n + 1))
+        done
+        kill -0 "${pid}" 2>/dev/null && kill -KILL "${pid}" 2>/dev/null
+    fi
+    rm -f "${file}"
+}
+
+stop_by_pidfile "${PID_FILE}"
+stop_by_pidfile "${KERNEL_PID_FILE}"
+pkill -f "${APP_DEST}/bin/mihomo " 2>/dev/null
+
+exit 0

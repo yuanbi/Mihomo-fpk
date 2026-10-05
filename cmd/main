@@ -1,0 +1,177 @@
+#!/bin/bash
+# Mihomo 代理 - 服务主控脚本 (start / stop / status)
+
+APP_DEST="${TRIM_APPDEST:-$(cd "$(dirname "$0")/.." && pwd)}"
+PKG_VAR="${TRIM_PKGVAR:-/tmp/mihomo-fpk/var}"
+PKG_ETC="${TRIM_PKGETC:-/tmp/mihomo-fpk/etc}"
+PKG_TMP="${TRIM_PKGTMP:-/tmp/mihomo-fpk/tmp}"
+TEMP_LOG="${TRIM_TEMP_LOGFILE:-/dev/null}"
+
+PANEL_BIN="${APP_DEST}/bin/mihomo-panel"
+PANEL_PORT=9788
+
+LOG_DIR="${PKG_VAR}/logs"
+LOG_FILE="${LOG_DIR}/service.log"
+PID_FILE="${PKG_VAR}/panel.pid"
+KERNEL_PID_FILE="${PKG_VAR}/mihomo.pid"
+
+mkdir -p "${LOG_DIR}" "${PKG_VAR}" "${PKG_ETC}" "${PKG_TMP}" 2>/dev/null
+
+log_msg() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >>"${LOG_FILE}"
+}
+
+check_process() {
+    local pid="${1:-}"
+    [ -n "${pid}" ] && kill -0 "${pid}" 2>/dev/null
+}
+
+panel_pid() {
+    [ -f "${PID_FILE}" ] || return 1
+    local pid
+    pid=$(head -n 1 "${PID_FILE}" | tr -d '[:space:]')
+    if check_process "${pid}"; then
+        printf '%s' "${pid}"
+        return 0
+    fi
+    rm -f "${PID_FILE}"
+    return 1
+}
+
+wait_ready() {
+    local pid="$1" count=0
+    while [ "${count}" -lt 40 ]; do
+        check_process "${pid}" || return 1
+        if command -v curl >/dev/null 2>&1; then
+            curl -fsS -m 2 "http://127.0.0.1:${PANEL_PORT}/api/health" >/dev/null 2>&1 && return 0
+        else
+            sleep 1
+            return 0
+        fi
+        count=$((count + 1))
+        sleep 0.5
+    done
+    return 1
+}
+
+start_process() {
+    if panel_pid >/dev/null; then
+        log_msg "面板已在运行，跳过启动"
+        return 0
+    fi
+
+    [ -f "${PANEL_BIN}" ] && chmod +x "${PANEL_BIN}" 2>/dev/null
+    # 同源网关脚本同样需要执行位（升级或权限丢失时兜底）
+    [ -f "${APP_DEST}/ui/index.cgi" ] && chmod 0755 "${APP_DEST}/ui/index.cgi" 2>/dev/null
+
+    if [ ! -f "${PANEL_BIN}" ]; then
+        echo "应用文件不完整：找不到 ${PANEL_BIN}，请重新安装应用。" >"${TEMP_LOG}"
+        log_msg "缺少面板程序 ${PANEL_BIN}"
+        return 1
+    fi
+
+    log_msg "正在启动 Mihomo 面板 ..."
+    cd "${APP_DEST}" || return 1
+
+    nohup "${PANEL_BIN}" \
+        --listen "0.0.0.0:${PANEL_PORT}" \
+        --appdest "${APP_DEST}" \
+        --etc "${PKG_ETC}" \
+        --var "${PKG_VAR}" >>"${LOG_FILE}" 2>&1 &
+
+    local pid=$!
+    printf '%s' "${pid}" >"${PID_FILE}"
+    log_msg "面板进程已创建 pid=${pid}"
+
+    if wait_ready "${pid}"; then
+        log_msg "面板启动成功"
+        return 0
+    fi
+
+    if check_process "${pid}"; then
+        log_msg "面板进程存在，健康检查未通过（忽略）"
+        return 0
+    fi
+
+    echo "Mihomo 面板启动失败，请查看日志：${LOG_FILE}" >"${TEMP_LOG}"
+    log_msg "面板启动失败"
+    rm -f "${PID_FILE}"
+    return 1
+}
+
+stop_kernel() {
+    # 面板退出时会自行停止内核，这里做兜底清理
+    if [ -f "${KERNEL_PID_FILE}" ]; then
+        local kpid
+        kpid=$(head -n 1 "${KERNEL_PID_FILE}" | tr -d '[:space:]')
+        if check_process "${kpid}"; then
+            log_msg "清理内核进程 pid=${kpid}"
+            kill -TERM "${kpid}" 2>/dev/null
+            local n=0
+            while check_process "${kpid}" && [ "${n}" -lt 20 ]; do
+                sleep 0.5
+                n=$((n + 1))
+            done
+            check_process "${kpid}" && kill -KILL "${kpid}" 2>/dev/null
+        fi
+    fi
+    rm -f "${KERNEL_PID_FILE}"
+    pkill -f "${APP_DEST}/bin/mihomo " 2>/dev/null
+    return 0
+}
+
+stop_process() {
+    log_msg "正在停止 Mihomo 面板 ..."
+
+    if pid=$(panel_pid); then
+        log_msg "向面板进程发送 TERM 信号 pid=${pid}"
+        kill -TERM "${pid}" 2>/dev/null
+        local count=0
+        while check_process "${pid}" && [ "${count}" -lt 20 ]; do
+            sleep 1
+            count=$((count + 1))
+            log_msg "等待面板退出 ... (${count}s/20s)"
+        done
+        if check_process "${pid}"; then
+            log_msg "强制结束面板进程 pid=${pid}"
+            kill -KILL "${pid}" 2>/dev/null
+            sleep 1
+        fi
+    else
+        log_msg "未发现运行中的面板进程"
+    fi
+
+    rm -f "${PID_FILE}"
+    stop_kernel
+    log_msg "已停止"
+    return 0
+}
+
+status() {
+    if panel_pid >/dev/null; then
+        return 0
+    fi
+    return 1
+}
+
+case "$1" in
+start)
+    start_process
+    exit $?
+    ;;
+stop)
+    stop_process
+    exit 0
+    ;;
+status)
+    if status; then
+        exit 0
+    else
+        exit 3
+    fi
+    ;;
+*)
+    echo "usage: $0 {start|stop|status}" >"${TEMP_LOG}"
+    exit 1
+    ;;
+esac

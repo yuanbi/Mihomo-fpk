@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mihomo 代理 · 控制台</title>
+    <link rel="icon" href="favicon.svg" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div class="wrap">
+        <header class="topbar">
+            <div class="brand">
+                <div class="logo">
+                    <svg viewBox="0 0 48 48" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0%" stop-color="#6366f1" />
+                                <stop offset="100%" stop-color="#0ea5e9" />
+                            </linearGradient>
+                        </defs>
+                        <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#lg)" />
+                        <path d="M12 33V19l8 8 8-8v14" stroke="#fff" stroke-width="3.4" stroke-linecap="round"
+                            stroke-linejoin="round" fill="none" />
+                        <circle cx="34" cy="33" r="3.4" fill="#fff" />
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>Mihomo 代理</h1>
+                    <p id="brandSub">Clash.Meta 内核 · 飞牛 fnOS</p>
+                </div>
+            </div>
+
+            <div class="top-actions">
+                <span id="kernelBadge" class="badge badge-idle">读取中…</span>
+                <button id="btnStart" class="btn btn-primary" type="button">启动代理</button>
+                <button id="btnStop" class="btn" type="button">停止</button>
+                <button id="btnRestart" class="btn" type="button">重启</button>
+                <a id="linkDashboard" class="btn btn-ghost" href="dashboard/">Clash 面板</a>
+            </div>
+        </header>
+
+        <nav class="tabs" id="tabs">
+            <button class="tab active" data-tab="overview" type="button">概览</button>
+            <button class="tab" data-tab="subs" type="button">订阅</button>
+            <button class="tab" data-tab="nodes" type="button">节点</button>
+            <button class="tab" data-tab="settings" type="button">设置</button>
+            <button class="tab" data-tab="logs" type="button">日志</button>
+        </nav>
+
+        <main>
+            <!-- ================= 概览 ================= -->
+            <section class="panel active" id="tab-overview">
+                <div class="grid">
+                    <div class="card">
+                        <h3>内核状态</h3>
+                        <div class="kv"><span>运行状态</span><b id="ovKernel">-</b></div>
+                        <div class="kv"><span>进程 PID</span><b id="ovPid">-</b></div>
+                        <div class="kv"><span>内核版本</span><b id="ovVersion">-</b></div>
+                        <div class="kv"><span>运行时长</span><b id="ovUptime">-</b></div>
+                        <div class="kv"><span>自动重启次数</span><b id="ovRestarts">-</b></div>
+                    </div>
+
+                    <div class="card">
+                        <h3>代理入口</h3>
+                        <div class="kv"><span>混合代理端口</span><b id="ovMixed">-</b></div>
+                        <div class="kv"><span>局域网地址</span><b id="ovLanAddr">-</b></div>
+                        <div class="kv"><span>局域网监听</span><b id="ovAllowLan">-</b></div>
+                        <div class="kv"><span>运行模式</span><b id="ovMode">-</b></div>
+                        <div class="kv"><span>TUN 透明代理</span><b id="ovTun">-</b></div>
+                        <p class="hint" id="ovProxyHint">在其它设备上把 HTTP / SOCKS5 代理设置为上方局域网地址即可。</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>当前订阅</h3>
+                        <div class="kv"><span>名称</span><b id="ovSubName">未配置</b></div>
+                        <div class="kv"><span>节点数量</span><b id="ovSubNodes">-</b></div>
+                        <div class="kv"><span>最近更新</span><b id="ovSubUpdated">-</b></div>
+                        <div class="kv"><span>流量</span><b id="ovSubTraffic">-</b></div>
+                        <div class="kv"><span>到期时间</span><b id="ovSubExpire">-</b></div>
+                        <div class="row-actions">
+                            <button id="btnQuickUpdate" class="btn btn-sm" type="button">更新订阅</button>
+                            <button id="btnGeoUpdate" class="btn btn-sm" type="button">更新规则库</button>
+                            <button id="btnKernelUpdate" class="btn btn-sm" type="button">检查内核更新</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>快速上手</h3>
+                    <ol class="steps">
+                        <li>在「订阅」标签页粘贴机场订阅链接，点击添加后会自动下载节点。</li>
+                        <li>回到「概览」点击「启动代理」，内核运行后即可使用。</li>
+                        <li>点击右上角「Clash 面板」可查看实时连接、延迟测速与规则命中。</li>
+                        <li>如需全局透明代理，请在「设置」中开启 TUN 模式。</li>
+                    </ol>
+                </div>
+            </section>
+
+            <!-- ================= 订阅 ================= -->
+            <section class="panel" id="tab-subs">
+                <div class="card">
+                    <h3>添加订阅</h3>
+                    <form id="subForm" class="form-grid">
+                        <label>
+                            <span>名称</span>
+                            <input id="subName" type="text" placeholder="例如：机场 A（可留空）" />
+                        </label>
+                        <label>
+                            <span>使用方式</span>
+                            <select id="subMode">
+                                <option value="nodes">内置规则（推荐）</option>
+                                <option value="full">使用订阅自带规则</option>
+                            </select>
+                        </label>
+                        <div class="span2">
+                            <span class="field-label">订阅来源</span>
+                            <div class="seg" id="subSourceSeg">
+                                <label><input type="radio" name="subSource" value="url" checked /><span>订阅链接</span></label>
+                                <label><input type="radio" name="subSource" value="upload" /><span>上传文件</span></label>
+                                <label><input type="radio" name="subSource" value="file" /><span>NAS 路径</span></label>
+                            </div>
+                        </div>
+                        <label class="span2" id="subUrlRow">
+                            <span>订阅链接</span>
+                            <input id="subUrl" type="text" placeholder="https://example.com/api/v1/client/subscribe?token=..." />
+                        </label>
+                        <label class="span2" id="subFileRow" hidden>
+                            <span>订阅文件（从本机选择，支持 yaml / base64 文本）</span>
+                            <input id="subFile" type="file" accept=".yaml,.yml,.txt,.conf,.list,text/*" />
+                        </label>
+                        <label class="span2" id="subPathRow" hidden>
+                            <span>NAS 文件路径（例如文件管理里复制到的原始路径）</span>
+                            <input id="subPath" type="text" placeholder="/vol1/1000/docker/mihomo/sub.yaml" />
+                        </label>
+                        <div class="form-action">
+                            <button class="btn btn-primary" type="submit">添加订阅</button>
+                        </div>
+                    </form>
+                    <p class="hint">
+                        订阅来源支持三种：直接填机场给的<strong>订阅链接</strong>；从电脑<strong>上传</strong>一份订阅文件
+                        （适合不方便联网拉取、或只有配置文件的场景）；或填写文件在 NAS 上的<strong>绝对路径</strong>。
+                        「内置规则」只提取订阅中的节点，使用内置的广告拦截 / 国内直连规则；
+                        「订阅自带规则」直接使用机场提供的完整配置，保留其策略组与分流规则。
+                    </p>
+                </div>
+
+                <div class="card">
+                    <h3>订阅列表</h3>
+                    <div id="subList" class="sub-list"></div>
+                </div>
+            </section>
+
+            <!-- ================= 节点 ================= -->
+            <section class="panel" id="tab-nodes">
+                <div class="card">
+                    <div class="card-head">
+                        <h3>节点列表</h3>
+                        <button id="btnReloadNodes" class="btn btn-sm" type="button">刷新</button>
+                    </div>
+                    <p class="hint">以下节点来自当前启用的订阅，节点选择与测速请在「Clash 面板」中操作。</p>
+                    <div id="nodeList" class="node-list"></div>
+                </div>
+            </section>
+
+            <!-- ================= 设置 ================= -->
+            <section class="panel" id="tab-settings">
+                <form id="settingsForm">
+                    <div class="grid">
+                        <div class="card">
+                            <h3>基本设置</h3>
+                            <label class="field">
+                                <span>混合代理端口（HTTP + SOCKS5）</span>
+                                <input id="setMixedPort" type="number" min="1" max="65535" />
+                            </label>
+                            <label class="field">
+                                <span>运行模式</span>
+                                <select id="setMode">
+                                    <option value="rule">规则模式</option>
+                                    <option value="global">全局模式</option>
+                                    <option value="direct">直连模式</option>
+                                </select>
+                            </label>
+                            <label class="field">
+                                <span>日志级别</span>
+                                <select id="setLogLevel">
+                                    <option value="silent">silent</option>
+                                    <option value="error">error</option>
+                                    <option value="warning">warning</option>
+                                    <option value="info">info</option>
+                                    <option value="debug">debug</option>
+                                </select>
+                            </label>
+                            <label class="switch">
+                                <input id="setAllowLan" type="checkbox" />
+                                <span>允许局域网连接（关闭后仅本机可用）</span>
+                            </label>
+                            <label class="switch">
+                                <input id="setUnifiedDelay" type="checkbox" />
+                                <span>统一延迟（unified-delay）</span>
+                            </label>
+                            <label class="switch">
+                                <input id="setTcpConcurrent" type="checkbox" />
+                                <span>TCP 并发（tcp-concurrent）</span>
+                            </label>
+                            <label class="switch">
+                                <input id="setSniffer" type="checkbox" />
+                                <span>域名嗅探（sniffer）</span>
+                            </label>
+                        </div>
+
+                        <div class="card">
+                            <h3>DNS</h3>
+                            <label class="switch">
+                                <input id="setDnsEnable" type="checkbox" />
+                                <span>启用内置 DNS</span>
+                            </label>
+                            <label class="field">
+                                <span>监听地址</span>
+                                <input id="setDnsListen" type="text" placeholder="0.0.0.0:1053" />
+                            </label>
+                            <label class="field">
+                                <span>增强模式</span>
+                                <select id="setDnsMode">
+                                    <option value="fake-ip">fake-ip</option>
+                                    <option value="redir-host">redir-host</option>
+                                    <option value="normal">normal</option>
+                                </select>
+                            </label>
+                            <label class="field">
+                                <span>国内 DNS（每行一个）</span>
+                                <textarea id="setDnsNameserver" rows="3"></textarea>
+                            </label>
+                            <label class="field">
+                                <span>国外 DNS（每行一个）</span>
+                                <textarea id="setDnsFallback" rows="3"></textarea>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="grid">
+                        <div class="card">
+                            <h3>TUN 透明代理</h3>
+                            <label class="switch">
+                                <input id="setTunEnable" type="checkbox" />
+                                <span>启用 TUN 模式（需要 root 权限，本应用已申请）</span>
+                            </label>
+                            <label class="field">
+                                <span>协议栈</span>
+                                <select id="setTunStack">
+                                    <option value="mixed">mixed</option>
+                                    <option value="gvisor">gvisor</option>
+                                    <option value="system">system</option>
+                                </select>
+                            </label>
+                            <label class="field">
+                                <span>网卡名称</span>
+                                <input id="setTunDevice" type="text" placeholder="Mihomo" />
+                            </label>
+                            <label class="field">
+                                <span>MTU</span>
+                                <input id="setTunMtu" type="number" min="1280" max="9000" />
+                            </label>
+                            <label class="switch">
+                                <input id="setTunAutoRoute" type="checkbox" />
+                                <span>自动配置路由（auto-route）</span>
+                            </label>
+                            <label class="switch">
+                                <input id="setTunAutoRedirect" type="checkbox" />
+                                <span>自动重定向（auto-redirect，Linux 内核需支持）</span>
+                            </label>
+                            <label class="field">
+                                <span>DNS 劫持（每行一个）</span>
+                                <textarea id="setTunHijack" rows="2" placeholder="any:53"></textarea>
+                            </label>
+                        </div>
+
+                        <div class="card">
+                            <h3>订阅来源</h3>
+                            <p class="hint" id="setSubHint">正在读取订阅…</p>
+                            <label class="field">
+                                <span>要修改的订阅</span>
+                                <select id="setSubSelect"></select>
+                            </label>
+                            <div>
+                                <span class="field-label">来源方式</span>
+                                <div class="seg" id="setSubSourceSeg">
+                                    <label><input type="radio" name="setSubSource" value="url" /><span>订阅链接</span></label>
+                                    <label><input type="radio" name="setSubSource" value="upload" /><span>上传文件</span></label>
+                                    <label><input type="radio" name="setSubSource" value="file" /><span>NAS 路径</span></label>
+                                </div>
+                            </div>
+                            <label class="field" id="setSubUrlRow">
+                                <span>订阅链接</span>
+                                <input id="setSubUrl" type="text" placeholder="https://example.com/api/v1/client/subscribe?token=..." />
+                            </label>
+                            <label class="field" id="setSubFileRow" hidden>
+                                <span>订阅文件（留空表示不改动已上传的内容）</span>
+                                <input id="setSubFile" type="file" accept=".yaml,.yml,.txt,.conf,.list,text/*" />
+                            </label>
+                            <label class="field" id="setSubPathRow" hidden>
+                                <span>NAS 文件路径</span>
+                                <input id="setSubPath" type="text" placeholder="/vol1/1000/docker/mihomo/sub.yaml" />
+                            </label>
+                            <label class="switch">
+                                <input id="setSubModeFull" type="checkbox" />
+                                <span>使用订阅自带规则（关闭则只取节点、套用内置规则）</span>
+                            </label>
+                            <div class="row-actions">
+                                <button id="btnSubSave" class="btn btn-sm btn-primary" type="button">保存订阅来源</button>
+                                <button id="btnSubUpdate" class="btn btn-sm" type="button">立即更新节点</button>
+                            </div>
+                            <p class="hint">
+                                也可以从「应用中心 → Mihomo 代理 → 应用设置」修改，两个入口改的是同一条由向导创建的订阅。
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <h3>高级</h3>
+                            <label class="field">
+                                <span>自定义规则（每行一条，插入到规则末尾）</span>
+                                <textarea id="setCustomRules" rows="5"
+                                    placeholder="DOMAIN-SUFFIX,example.com,🚀 节点选择"></textarea>
+                            </label>
+                            <label class="field">
+                                <span>内核控制密钥（访问密钥）</span>
+                                <input id="setSecret" type="text" />
+                            </label>
+                            <label class="field">
+                                <span>控制台访问密码（留空表示不启用）</span>
+                                <input id="setAccessPassword" type="text" placeholder="设置后访问控制台需要输入密码" />
+                            </label>
+                            <p class="hint">
+                                控制台默认不设密码，局域网内任何设备都能打开。若网络环境不完全可信，建议设置访问密码。
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="card sticky-actions">
+                        <button class="btn btn-primary" type="submit">保存并应用</button>
+                        <button id="btnReloadSettings" class="btn" type="button">重新载入</button>
+                        <span class="hint">保存后端口 / TUN / DNS 监听的变更会自动重启内核，其它变更热重载。</span>
+                    </div>
+                </form>
+            </section>
+
+            <!-- ================= 日志 ================= -->
+            <section class="panel" id="tab-logs">
+                <div class="card">
+                    <div class="card-head">
+                        <h3>运行日志</h3>
+                        <div class="row-actions">
+                            <select id="logSource">
+                                <option value="kernel">mihomo 内核</option>
+                                <option value="panel">应用服务</option>
+                            </select>
+                            <select id="logLines">
+                                <option value="200">200 行</option>
+                                <option value="500" selected>500 行</option>
+                                <option value="1000">1000 行</option>
+                            </select>
+                            <label class="switch inline">
+                                <input id="logAuto" type="checkbox" checked />
+                                <span>自动刷新</span>
+                            </label>
+                            <button id="btnReloadLogs" class="btn btn-sm" type="button">刷新</button>
+                        </div>
+                    </div>
+                    <pre id="logBox" class="log-box">加载中…</pre>
+                </div>
+            </section>
+        </main>
+
+        <footer class="foot">
+            <span id="footVersion">Mihomo 代理</span>
+            <span>·</span>
+            <a href="dashboard/">Clash 面板</a>
+            <span>·</span>
+            <a href="api/config" id="linkConfig">查看生成的配置</a>
+        </footer>
+    </div>
+
+    <div id="cfgModal" class="modal" hidden>
+        <div class="modal-card">
+            <div class="modal-head">
+                <span>生成的 mihomo 配置</span>
+                <button id="btnCfgClose" class="btn btn-sm" type="button">关闭</button>
+            </div>
+            <pre id="cfgBox" class="cfg-box">加载中…</pre>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <script src="app.js"></script>
+</body>
+
+</html>

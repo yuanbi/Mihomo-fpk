@@ -1,0 +1,8 @@
+#!/bin/bash
+# 升级前：停止当前服务，避免文件占用。
+
+CMD_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+bash "${CMD_DIR}/main" stop >/dev/null 2>&1
+
+exit 0
