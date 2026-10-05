@@ -1,0 +1,17 @@
+appname               = Mihomo-fpk
+version               = 1.0.3
+display_name          = Mihomo 代理
+desc                  = 基于 mihomo(Clash.Meta) 内核的代理服务，内置 Web 控制台与 Clash 面板。支持订阅管理、节点切换、TUN 透明代理、DNS 与规则自定义，可作为局域网网关为其它设备提供代理。
+platform              = x86
+os_min_version        = 1.1.8
+source                = thirdparty
+maintainer            = yuanbi
+maintainer_url        = https://github.com/yuanbi
+distributor           = yuanbi
+distributor_url       = https://github.com/yuanbi
+desktop_uidir         = ui
+desktop_applaunchname = Mihomo-fpk.Console
+service_port          = 9788
+checkport             = true
+disable_authorization_path = true
+changelog             = 1.0.3：订阅来源不再只支持链接——安装向导、应用设置、应用面板三处都可以选择「订阅链接」或「NAS 上的订阅文件」，面板里还能直接从电脑上传文件；「设置」标签页新增「订阅来源」卡片，可随时更换来源与切换内置/订阅自带规则。1.0.2：修复桌面图标打开后只显示「cgi executable must be index.cgi」的问题——飞牛同源网关要求 CGI 入口脚本必须命名为 index.cgi，已重命名并同步全部引用；转发时强制绕过系统代理，响应头解析改用 shell 内建命令。1.0.1：桌面图标改为飞牛窗口内嵌打开（不再新开标签页），新增 CGI 同源网关，HTTP/HTTPS 下均可正常显示，并复用飞牛登录鉴权；控制台内部链接与配置查看改为页内操作。1.0.0：首个版本，内置 mihomo v1.19.32 内核、订阅管理与 Clash 面板
